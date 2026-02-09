@@ -269,3 +269,14 @@ MIT License - voir le fichier [LICENSE](LICENSE) pour plus de détails.
 - [Documentation PyTorch](https://pytorch.org/docs)
 - [Documentation scikit-learn](https://scikit-learn.org)
 - [Spécifications du projet](specs/)
+-e 
+
+## ✅ Configuration CI/CD Validée
+
+La configuration CI/CD a été validée avec succès le 2026-02-09.
+- ✅ Tous les workflows GitHub Actions passent
+- ✅ Les règles de protection de branche sont configurées
+- ✅ L'auto-merge fonctionne avec le label 'auto-merge'
+- ✅ Les pré-commits vérifient le code avant chaque commit
+- ✅ La couverture de code est mesurée et rapportée
+- ✅ Les notebooks sont testés automatiquement
