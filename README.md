@@ -148,6 +148,96 @@ Le projet est conçu pour une intégration complète avec Red Hat OpenShift :
 - **Couverture de tests** : > 70%
 - **Disponibilité** : 99.9% sur OpenShift
 
+## 🔄 CI/CD Pipeline
+
+### Configuration GitHub Actions
+
+Le projet utilise GitHub Actions pour l'intégration continue et le déploiement continu. Le workflow CI/CD est configuré dans `.github/workflows/ci.yml`.
+
+#### Jobs du workflow CI
+
+1. **Tests unitaires et linting** (`test`):
+   - Exécute les tests avec pytest et mesure la couverture de code
+   - Vérifie le linting avec Ruff et le formatage avec Black
+   - Vérifie les types avec mypy
+   - Génère un rapport de couverture uploadé sur Codecov
+
+2. **Build et packaging** (`build`):
+   - Construit le package Python avec `python -m build`
+   - Upload les artefacts de build pour le déploiement
+
+3. **Test des notebooks** (`notebook-test`):
+   - Exécute tous les notebooks Jupyter pour vérifier qu'ils fonctionnent sans erreur
+
+4. **Déploiement OpenShift** (`openshift-deploy`):
+   - Déploie l'application sur Red Hat OpenShift (simulé pour l'instant)
+
+5. **Création automatique de PR** (`auto-pr`):
+   - Crée automatiquement une Pull Request de `develop` vers `main` après chaque push sur `develop`
+   - Ajoute le label `automated-pr` pour identification
+
+6. **Statut CI** (`ci`):
+   - Agrège le statut de tous les jobs et génère un badge de statut
+
+#### Règles de branche
+
+- **Branche `main`** : Protégée avec les règles suivantes :
+  - Requiert un review d'au moins 1 approbateur
+  - Requiert que tous les checks CI passent
+  - Requiert la résolution des conversations
+  - Interdit les pushes directs (seules les PR sont autorisées)
+
+- **Branche `develop`** : Protégée avec les règles suivantes :
+  - Requiert que tous les checks CI passent
+  - Permet les pushes directs pour les développeurs autorisés
+
+#### Merge automatique
+
+Le workflow `.github/workflows/auto-merge.yml` permet le merge automatique des PR avec le label `auto-merge` après :
+- Tous les checks CI réussis
+- Au moins 1 review approuvé
+- Pas de conflits
+
+#### Pré-commit hooks
+
+Des hooks Git pré-commit sont configurés dans `.pre-commit-config.yaml` :
+- Vérification du linting avec Ruff
+- Formatage avec Black
+- Vérification des types avec mypy
+- Exécution automatique avant chaque commit
+
+#### Configuration des dépendances
+
+- **Pixi** : Gestionnaire de dépendances et d'environnements
+- **PyTorch & TensorFlow** : Frameworks de deep learning
+- **scikit-learn, pandas, numpy** : Bibliothèques de data science
+- **Outils de qualité** : pytest, Ruff, Black, mypy, pre-commit
+
+### Exécution locale
+
+```bash
+# Installer les dépendances
+pixi install
+
+# Installer le package en mode développement
+pixi run setup
+
+# Exécuter les tests
+pixi run test
+
+# Vérifier le linting et formatage
+pixi run lint
+
+# Formater le code
+pixi run format
+```
+
+### Badges CI
+
+[![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)](https://github.com/damien-guesdon/brain-scan-ai/actions)
+[![Code Coverage](https://img.shields.io/badge/coverage-40%25-yellow)](https://codecov.io/gh/damien-guesdon/brain-scan-ai)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 ## 🤝 Contribution
 
 ### Processus de développement
