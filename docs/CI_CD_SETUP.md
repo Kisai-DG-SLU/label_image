@@ -358,4 +358,3 @@ Pour mettre à jour la configuration CI/CD :
 - [Documentation pre-commit](https://pre-commit.com/)
 - [Documentation pytest](https://docs.pytest.org/)
 - [Documentation Codecov](https://docs.codecov.com/)
-

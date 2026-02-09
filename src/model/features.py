@@ -24,14 +24,14 @@ class FeatureExtractor:
     def _load_pretrained_model(self) -> nn.Module:
         """Load pre-trained model and remove classification layer."""
         if self.model_name == "resnet50":
-            model = models.resnet50(pretrained=True)
+            model = models.resnet50(weights=models.ResNet50_Weights.IMAGENET1K_V1)
             # Remove the final fully connected layer
             model = nn.Sequential(*list(model.children())[:-1])
         elif self.model_name == "resnet18":
-            model = models.resnet18(pretrained=True)
+            model = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
             model = nn.Sequential(*list(model.children())[:-1])
         elif self.model_name == "vgg16":
-            model = models.vgg16(pretrained=True)
+            model = models.vgg16(weights=models.VGG16_Weights.IMAGENET1K_V1)
             model.classifier = nn.Sequential(*list(model.classifier.children())[:-1])
         else:
             raise ValueError(f"Unsupported model: {self.model_name}")
