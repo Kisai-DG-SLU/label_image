@@ -157,6 +157,38 @@ jobs:
         echo "Deploying to OpenShift namespace"
         # Cette étape utiliserait les manifests Kubernetes et OC CLI
 
+  auto-pr:
+    name: Auto Create PR
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "Auto PR: ${{ github.event.head_commit.message }}"
+        body: |
+          ## Pull Request Automatique
+          
+          Ce PR a été créé automatiquement par le workflow CI.
+          
+          **Changements:**
+          - ${{ github.event.head_commit.message }}
+          
+          **Statut CI:** ✅ Tous les checks doivent passer avant merge
+          
+          **Merge automatique:** Ajouter le label `auto-merge` pour merge automatique
+        branch: "auto-pr-${{ github.sha }}"
+        base: main
+        labels: "automated-pr"
+        delete-branch: true
+    
   ci:
     name: CI Status
     runs-on: ubuntu-22.04
