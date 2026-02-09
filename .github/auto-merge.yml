@@ -1,0 +1,32 @@
+# Configuration pour le merge automatique des PRs
+# Ce fichier configure les règles de merge automatique via GitHub Actions
+
+# Règles pour le merge automatique
+merge_method: squash
+delete_branch_on_merge: true
+
+# Conditions requises pour le merge automatique
+required_status_checks:
+  - ci
+  - test
+  - build
+  - notebook-test
+
+# Nombre minimum de reviews approuvantes (0 pour merge automatique sans review)
+required_approving_review_count: 0
+
+# Dismiss stale reviews when new commits are pushed
+dismiss_stale_reviews: true
+
+# Require branches to be up to date before merging
+require_branches_to_be_up_to_date: true
+
+# Autoriser le merge automatique pour les PRs de certaines branches
+allowed_merge_branches:
+  - main
+  - develop
+
+# Exclure certaines branches du merge automatique
+excluded_branches:
+  - master
+  - release/*

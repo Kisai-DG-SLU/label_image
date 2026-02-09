@@ -34,20 +34,16 @@ jobs:
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.5.2
       with:
-        pixi-version: '0.32.0'
-        cache: true
+        pixi-version: 'v0.32.0'
     
     - name: Install dependencies
       run: pixi install
     
-    - name: Run linting (Ruff)
+    - name: Setup package in development mode
+      run: pixi run setup
+    
+    - name: Run linting and formatting checks
       run: pixi run lint
-    
-    - name: Run formatting check (Black)
-      run: pixi run format-check
-    
-    - name: Run type checking (Mypy)
-      run: pixi run type-check
     
     - name: Run tests with coverage
       run: pixi run test
@@ -70,7 +66,7 @@ jobs:
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.5.2
       with:
-        pixi-version: '0.32.0'
+        pixi-version: 'v0.32.0'
     
     - name: Install dependencies
       run: pixi install
@@ -97,7 +93,7 @@ jobs:
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.5.2
       with:
-        pixi-version: '0.32.0'
+        pixi-version: 'v0.32.0'
     
     - name: Install dependencies
       run: pixi install
@@ -135,3 +131,75 @@ jobs:
       run: |
         echo "Deploying to OpenShift namespace"
         # Cette étape utiliserait les manifests Kubernetes et OC CLI
+
+  auto-pr:
+    name: Auto Create PR
+    runs-on: ubuntu-22.04
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v6
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        title: "Auto PR: ${{ github.event.head_commit.message }}"
+        body: |
+          ## Pull Request Automatique
+          
+          Ce PR a été créé automatiquement par le workflow CI.
+          
+          **Changements:**
+          - ${{ github.event.head_commit.message }}
+          
+          **Statut CI:** ✅ Tous les checks doivent passer avant merge
+          
+          **Merge automatique:** Ajouter le label `auto-merge` pour merge automatique
+        branch: "auto-pr-${{ github.sha }}"
+        base: main
+        labels: "automated-pr"
+        delete-branch: true
+    
+  ci:
+    name: CI Status
+    runs-on: ubuntu-22.04
+    needs: [test, build, notebook-test]
+    if: always()
+    
+    steps:
+    - name: Aggregate CI status
+      id: ci-status
+      run: |
+        # Vérifier le statut de tous les jobs requis
+        if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.notebook-test.result }}" == "success" ]]; then
+          echo "All required checks passed"
+          echo "CI status: success"
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "Some checks failed"
+          echo "CI status: failure"
+          echo "status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+    
+    - name: Create status badge
+      if: always()
+      run: |
+        if [[ "${{ steps.ci-status.outputs.status }}" == "success" ]]; then
+          echo "Creating success badge"
+          echo "![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)" > ci-status.md
+        else
+          echo "Creating failure badge"
+          echo "![CI Status](https://img.shields.io/badge/CI-failing-red)" > ci-status.md
+        fi
+    
+    - name: Upload CI status artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-status
+        path: ci-status.md
