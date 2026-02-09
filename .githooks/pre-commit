@@ -1,0 +1,42 @@
+#!/bin/bash
+
+echo "Running pre-commit checks for BrainScanAI..."
+
+# Run Ruff linter
+echo "Running Ruff linting..."
+pixi run ruff check src/ tests/
+
+if [ $? -ne 0 ]; then
+    echo "❌ Ruff linting failed. Please fix the issues above."
+    exit 1
+fi
+
+# Run Black formatting check
+echo "Running Black formatting check..."
+pixi run black --check src/ tests/
+
+if [ $? -ne 0 ]; then
+    echo "⚠️  Black formatting issues detected. Run 'pixi run format' to fix."
+    exit 1
+fi
+
+# Run Mypy type checking
+echo "Running Mypy type checking..."
+pixi run mypy src/
+
+if [ $? -ne 0 ]; then
+    echo "⚠️  Type checking issues detected. Please review above."
+    # Don't fail the commit for type checking warnings
+fi
+
+# Run basic tests
+echo "Running basic tests..."
+pixi run pytest tests/ -v --tb=short
+
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Please fix before committing."
+    exit 1
+fi
+
+echo "✅ All pre-commit checks passed!"
+exit 0

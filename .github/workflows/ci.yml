@@ -1,0 +1,137 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'notebooks/**'
+      - 'pyproject.toml'
+      - 'pixi.toml'
+      - 'Makefile'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'notebooks/**'
+      - 'pyproject.toml'
+      - 'pixi.toml'
+      - 'Makefile'
+      - '.github/workflows/**'
+
+jobs:
+  test:
+    name: Tests unitaires et linting
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.5.2
+      with:
+        pixi-version: '0.32.0'
+        cache: true
+    
+    - name: Install dependencies
+      run: pixi install
+    
+    - name: Run linting (Ruff)
+      run: pixi run lint
+    
+    - name: Run formatting check (Black)
+      run: pixi run format-check
+    
+    - name: Run type checking (Mypy)
+      run: pixi run type-check
+    
+    - name: Run tests with coverage
+      run: pixi run test
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+  
+  build:
+    name: Build and package
+    runs-on: ubuntu-22.04
+    needs: test
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.5.2
+      with:
+        pixi-version: '0.32.0'
+    
+    - name: Install dependencies
+      run: pixi install
+    
+    - name: Build package
+      run: |
+        pip install build
+        python -m build
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: python-package-dist
+        path: dist/
+  
+  notebook-test:
+    name: Test des notebooks
+    runs-on: ubuntu-22.04
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.5.2
+      with:
+        pixi-version: '0.32.0'
+    
+    - name: Install dependencies
+      run: pixi install
+    
+    - name: Test notebooks with nbconvert
+      run: |
+        # Test that notebooks can be executed without errors
+        for notebook in notebooks/*.ipynb; do
+          echo "Testing notebook: $notebook"
+          pixi run python -m nbconvert --to notebook --execute "$notebook" --output-dir /tmp
+        done
+  
+  openshift-deploy:
+    name: Déploiement OpenShift (simulé)
+    runs-on: ubuntu-22.04
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup OpenShift CLI
+      run: |
+        # Simulation pour l'instant - à remplacer par la vraie configuration OC
+        echo "OpenShift deployment would run here"
+        echo "OC CLI would be configured with secrets"
+    
+    - name: Build Docker image
+      run: |
+        echo "Building Docker image for OpenShift deployment"
+        # Cette étape serait implémentée avec les manifests OpenShift réels
+        
+    - name: Deploy to OpenShift
+      run: |
+        echo "Deploying to OpenShift namespace"
+        # Cette étape utiliserait les manifests Kubernetes et OC CLI
