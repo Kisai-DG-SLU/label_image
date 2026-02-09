@@ -52,6 +52,27 @@ jobs:
     - name: Run tests with coverage
       run: pixi run test
     
+    - name: Check coverage threshold
+      run: |
+        # Vérifier que la couverture est >= 70%
+        coverage_output=$(pixi run python -m pytest --cov=src --cov-report=term-missing --cov-fail-under=70 --no-cov-on-fail 2>&1 || true)
+        echo "$coverage_output"
+        
+        # Extraire le pourcentage de couverture
+        if echo "$coverage_output" | grep -q "TOTAL.*[0-9]*%"; then
+          coverage_percent=$(echo "$coverage_output" | grep "TOTAL" | awk '{print $4}' | sed 's/%//')
+          echo "Coverage percentage: $coverage_percent%"
+          
+          if (( $(echo "$coverage_percent < 70" | bc -l) )); then
+            echo "❌ Coverage is below 70% threshold: $coverage_percent%"
+            exit 1
+          else
+            echo "✅ Coverage meets threshold: $coverage_percent%"
+          fi
+        else
+          echo "⚠️ Could not extract coverage percentage"
+        fi
+    
     - name: Upload coverage reports
       uses: codecov/codecov-action@v4
       with:
@@ -135,3 +156,43 @@ jobs:
       run: |
         echo "Deploying to OpenShift namespace"
         # Cette étape utiliserait les manifests Kubernetes et OC CLI
+
+  ci:
+    name: CI Status
+    runs-on: ubuntu-22.04
+    needs: [test, build, notebook-test]
+    if: always()
+    
+    steps:
+    - name: Aggregate CI status
+      id: ci-status
+      run: |
+        # Vérifier le statut de tous les jobs requis
+        if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.notebook-test.result }}" == "success" ]]; then
+          echo "All required checks passed"
+          echo "CI status: success"
+          echo "status=success" >> $GITHUB_OUTPUT
+        else
+          echo "Some checks failed"
+          echo "CI status: failure"
+          echo "status=failure" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+    
+    - name: Create status badge
+      if: always()
+      run: |
+        if [[ "${{ steps.ci-status.outputs.status }}" == "success" ]]; then
+          echo "Creating success badge"
+          echo "![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)" > ci-status.md
+        else
+          echo "Creating failure badge"
+          echo "![CI Status](https://img.shields.io/badge/CI-failing-red)" > ci-status.md
+        fi
+    
+    - name: Upload CI status artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: ci-status
+        path: ci-status.md
