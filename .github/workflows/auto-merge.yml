@@ -54,11 +54,11 @@ jobs:
             });
             
             // Vérifier que tous les checks requis sont passés
-            const requiredChecks = ['ci', 'test', 'build', 'notebook-test'];
+            const requiredChecks = ['CI Status', 'Tests unitaires et linting', 'Build and package', 'Test des notebooks'];
             const allChecksPassed = requiredChecks.every(checkName => {
               const check = checks.check_runs.find(cr => cr.name === checkName);
               const status = statuses.statuses.find(s => s.context === checkName);
-              return (check && check.conclusion === 'success') || 
+              return (check && check.conclusion === 'success') ||
                      (status && status.state === 'success');
             });
             
