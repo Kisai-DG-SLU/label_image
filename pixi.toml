@@ -1,4 +1,4 @@
-[workspace]
+[project]
 name = "brain-scan-ai"
 version = "0.1.0"
 description = "Labellisation semi-supervisée pour la détection de tumeurs cérébrales sur IRM avec intégration Red Hat OpenShift"
