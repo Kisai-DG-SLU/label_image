@@ -39,6 +39,9 @@ jobs:
     - name: Install dependencies
       run: pixi install
     
+    - name: Setup package in development mode
+      run: pixi run setup
+    
     - name: Run linting and formatting checks
       run: pixi run lint
     
