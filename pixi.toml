@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "brain-scan-ai"
 version = "0.1.0"
 description = "Labellisation semi-supervisée pour la détection de tumeurs cérébrales sur IRM avec intégration Red Hat OpenShift"
@@ -17,33 +17,48 @@ serve = "python src/serve.py"
 
 [dependencies]
 python = "3.11.*"
-torch = "2.0.1"
-torchvision = "0.15.2"
-tensorflow = "2.15.0"
-scikit-learn = "1.3.2"
-pandas = "2.1.4"
-numpy = "1.26.0"
-opencv-python = "4.8.1"
-matplotlib = "3.8.0"
-seaborn = "0.13.0"
-plotly = "5.18.0"
-jupyter = "1.0.0"
-notebook = "7.0.6"
-mlflow = "2.8.1"
-hydra-core = "1.3.2"
-pydantic = "2.5.0"
-python-dotenv = "1.0.0"
-typer = "0.9.0"
-rich = "13.7.0"
+pip = "*"
+scikit-learn = ">=1.3.2"
+pandas = ">=2.1.4"
+numpy = ">=1.26.0"
+matplotlib = ">=3.8.0"
+seaborn = ">=0.13.0"
+jupyter = ">=1.0.0"
+notebook = ">=7.0.6"
+python-dotenv = ">=1.0.0"
+typer = ">=0.9.0"
+rich = ">=13.7.0"
 
-[feature.dev]
-dependencies = ["pytest>=7.4.0", "pytest-cov>=4.1.0", "ruff>=0.1.0", "black>=23.0.0", "mypy>=1.5.0", "pre-commit>=3.5.0", "jupyterlab>=4.0.0"]
+# ML dependencies - using pip for torch installation
+[pypi-dependencies]
+torch = ">=2.0.0"
+torchvision = ">=0.15.0"
+opencv-python = ">=4.8.1"
+plotly = ">=5.18.0"
 
-[feature.openshift]
-dependencies = ["openshift-client>=1.0.0", "kubernetes>=28.0.0", "docker>=6.0.0"]
+[feature.dev.dependencies]
+pytest = ">=7.4.0"
+pytest-cov = ">=4.1.0"
+ruff = ">=0.1.0"
+black = ">=23.0.0"
+mypy = ">=1.5.0"
+pre-commit = ">=3.5.0"
+jupyterlab = ">=4.0.0"
 
-[feature.docs]
-dependencies = ["sphinx>=7.0.0", "sphinx-rtd-theme>=1.3.0", "myst-parser>=2.0.0"]
+[feature.ml.dependencies]
+mlflow = ">=2.8.1"
+hydra-core = ">=1.3.2"
+pydantic = ">=2.5.0"
+
+# [feature.openshift.dependencies]
+# openshift-client = ">=1.0.0"
+# kubernetes = ">=28.0.0"
+# docker = ">=6.0.0"
+
+# [feature.docs.dependencies]
+# sphinx = ">=7.0.0"
+# sphinx-rtd-theme = ">=1.3.0"
+# myst-parser = ">=2.0.0"
 
 [environments.default]
-features = ["dev"]
+features = ["dev", "ml"]
