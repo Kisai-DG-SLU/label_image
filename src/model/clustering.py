@@ -25,7 +25,8 @@ class ClusterLabeler:
         if self.algorithm == "kmeans":
             self.model = KMeans(n_clusters=self.n_clusters, random_state=42)
         elif self.algorithm == "dbscan":
-            self.model = DBSCAN(eps=0.5, min_samples=5)
+            # Use larger eps for better clustering with typical feature scales
+            self.model = DBSCAN(eps=3.0, min_samples=5)
         else:
             raise ValueError(f"Unsupported algorithm: {self.algorithm}")
 
@@ -40,25 +41,35 @@ class ClusterLabeler:
         if self.labels_ is None:
             raise ValueError("Model must be fitted first")
 
-        # Calculate silhouette score (higher is better)
-        silhouette = silhouette_score(features, self.labels_)
-
-        # Calculate Davies-Bouldin index (lower is better)
-        db_index = davies_bouldin_score(features, self.labels_)
-
-        # Count clusters
+        # Count clusters (excluding noise points labeled -1)
         unique_labels = np.unique(self.labels_)
         n_clusters_found = len(unique_labels)
+
+        # Handle case where all points are noise or only one cluster found
+        valid_labels = self.labels_[self.labels_ != -1]
+        if len(np.unique(valid_labels)) < 2:
+            # Not enough clusters for silhouette and Davies-Bouldin scores
+            silhouette = np.nan
+            db_index = np.nan
+            cluster_sizes = np.array([])
+        else:
+            # Calculate silhouette score (higher is better)
+            silhouette = silhouette_score(features, self.labels_)
+
+            # Calculate Davies-Bouldin index (lower is better)
+            db_index = davies_bouldin_score(features, self.labels_)
+
+            # Calculate cluster sizes
+            if -1 not in self.labels_:
+                cluster_sizes = np.bincount(self.labels_ + 1)
+            else:
+                cluster_sizes = np.bincount(self.labels_[self.labels_ != -1] + 1)
 
         return {
             "silhouette_score": silhouette,
             "davies_bouldin_index": db_index,
             "n_clusters_found": n_clusters_found,
-            "cluster_sizes": (
-                np.bincount(self.labels_ + 1)
-                if -1 not in self.labels_
-                else np.bincount(self.labels_[self.labels_ != -1] + 1)
-            ),
+            "cluster_sizes": cluster_sizes,
         }
 
     def reduce_dimensions(

@@ -33,11 +33,16 @@ class ModelMonitor:
         predictions_array = np.array(self.predictions)
         labels_array = np.array(self.labels)
 
-        # For binary classification
-        if predictions_array.ndim > 1 and predictions_array.shape[1] == 2:
-            pred_classes = np.argmax(predictions_array, axis=1)
-        else:
+        # Determine prediction classes
+        if predictions_array.ndim == 1:
+            # Single probability per sample (binary classification)
             pred_classes = (predictions_array > 0.5).astype(int)
+        elif predictions_array.shape[1] == 1:
+            # Single probability per sample but 2D array
+            pred_classes = (predictions_array.flatten() > 0.5).astype(int)
+        else:
+            # Multiple probabilities per sample (multiclass classification)
+            pred_classes = np.argmax(predictions_array, axis=1)
 
         # Calculate metrics
         report = classification_report(labels_array, pred_classes, output_dict=True)
@@ -62,10 +67,16 @@ class ModelMonitor:
         predictions_array = np.array(self.predictions)
         labels_array = np.array(self.labels)
 
-        if predictions_array.ndim > 1 and predictions_array.shape[1] == 2:
-            pred_classes = np.argmax(predictions_array, axis=1)
-        else:
+        # Determine prediction classes (same logic as calculate_metrics)
+        if predictions_array.ndim == 1:
+            # Single probability per sample (binary classification)
             pred_classes = (predictions_array > 0.5).astype(int)
+        elif predictions_array.shape[1] == 1:
+            # Single probability per sample but 2D array
+            pred_classes = (predictions_array.flatten() > 0.5).astype(int)
+        else:
+            # Multiple probabilities per sample (multiclass classification)
+            pred_classes = np.argmax(predictions_array, axis=1)
 
         cm = confusion_matrix(labels_array, pred_classes)
 
@@ -87,11 +98,33 @@ class ModelMonitor:
         predictions_array = np.array(self.predictions)
         labels_array = np.array(self.labels)
 
-        # For binary classification with probability scores
-        if predictions_array.ndim > 1 and predictions_array.shape[1] == 2:
-            scores = predictions_array[:, 1]
-        else:
+        # ROC curve is only defined for binary classification
+        # Determine if we have binary classification (2 classes)
+        unique_labels = np.unique(labels_array)
+        if len(unique_labels) > 2:
+            # Multiclass classification - ROC curve not defined
+            print(
+                "Warning: ROC curve is only defined for binary classification. Skipping plot."
+            )
+            return
+
+        # Extract scores for binary classification
+        if predictions_array.ndim == 1:
+            # Single probability per sample (binary classification)
+            scores = predictions_array
+        elif predictions_array.shape[1] == 1:
+            # Single probability per sample but 2D array
             scores = predictions_array.flatten()
+        elif predictions_array.shape[1] == 2:
+            # Two probabilities per sample (binary with probability for each class)
+            scores = predictions_array[:, 1]  # Use probability of positive class
+        else:
+            # Multiclass probabilities - use probability of positive class (class 1)
+            # This assumes binary classification with one-hot encoded predictions
+            if 1 in unique_labels:
+                scores = predictions_array[:, 1]
+            else:
+                scores = predictions_array[:, -1]
 
         fpr, tpr, _ = roc_curve(labels_array, scores)
         roc_auc = auc(fpr, tpr)
