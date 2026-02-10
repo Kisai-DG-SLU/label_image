@@ -255,31 +255,27 @@ jobs:
         ref: develop
         token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
     
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
     - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
-        commit-message: "Auto PR: ${{ github.event.head_commit.message }}"
-        committer: "GitHub <noreply@github.com>"
-        author: "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>"
-        title: "Auto PR: ${{ github.event.head_commit.message }}"
-        body: |
-          ## Pull Request Automatique
-          
-          Ce PR a été créé automatiquement par le workflow CI.
-          
-          **Changements:**
-          - ${{ github.event.head_commit.message }}
-          
-          **Statut CI:** ✅ Tous les checks doivent passer avant merge
-          
-          **Merge automatique:** Ajouter le label `auto-merge` pour merge automatique
-        branch: "auto-pr"
-        base: main
-        labels: "automated-pr"
-        delete-branch: true
-        add-paths: |
-          .
+      env:
+        GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+      run: |
+        echo "Creating PR from develop to main..."
+        gh pr create --base main --head develop --title "Auto PR: ${{ github.event.head_commit.message }}" --body "Automated Pull Request created by CI/CD Pipeline." || echo "PR already exists"
+        
+        # Ajouter le label auto-merge pour déclencher le merge automatique
+        PR_URL=$(gh pr list --head develop --json url --jq '.[0].url')
+        if [ ! -z "$PR_URL" ]; then
+          echo "Found PR: $PR_URL"
+          gh pr edit "$PR_URL" --add-label "auto-merge"
+          echo "Added auto-merge label to PR"
+        else
+          echo "No PR found"
+        fi
   
   ci:
     name: CI Status
@@ -320,3 +316,4 @@ jobs:
       with:
         name: ci-status
         path: ci-status.md
+
