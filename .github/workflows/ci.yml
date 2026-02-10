@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
 
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
 jobs:
   test:
     name: Tests unitaires et linting
@@ -154,7 +160,7 @@ jobs:
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+        github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         publish_dir: ./gh-pages-content
         keep_files: false
   
@@ -246,11 +252,12 @@ jobs:
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
     
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@v6
       with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
         title: "Auto PR: ${{ github.event.head_commit.message }}"
         body: |
           ## Pull Request Automatique
