@@ -91,7 +91,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: coverage-reports
-        path: ./
+        path: coverage-artifact/
     
     - name: Configure Git
       run: |
@@ -101,7 +101,7 @@ jobs:
     - name: Extract coverage percentage
       run: |
         # Exécute le script d'extraction de couverture avec pixi
-        pixi run python scripts/extract_coverage.py coverage.xml coverage.json
+        pixi run python scripts/extract_coverage.py coverage-artifact/coverage.xml coverage.json
         
         # Affiche le pourcentage extrait
         cat coverage.json
@@ -115,11 +115,19 @@ jobs:
         # Nettoie le répertoire sauf .nojekyll
         find . -maxdepth 1 ! -name '.nojekyll' ! -name '.git' ! -name '.' -exec rm -rf {} +
         
-        # Copie les fichiers de couverture
-        cp -r htmlcov/* .
+        # Vérifie que le répertoire htmlcov existe dans l'artefact
+        if [ -d "coverage-artifact/htmlcov" ]; then
+          echo "Copying coverage report files..."
+          cp -r coverage-artifact/htmlcov/* .
+        else
+          echo "ERROR: htmlcov directory not found in coverage-artifact/"
+          echo "Listing contents of coverage-artifact/:"
+          ls -la coverage-artifact/
+          exit 1
+        fi
         
         # Copie le fichier JSON de métriques
-        cp ../coverage.json .
+        cp coverage.json .
         
         # Commit et push
         git add .
