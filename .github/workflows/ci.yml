@@ -253,6 +253,11 @@ jobs:
       with:
         fetch-depth: 0
         ref: develop
+        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+    
+    - name: Install GitHub CLI
+      run: |
+        type -p gh >/dev/null || sudo apt-get update && sudo apt-get install -y gh
     
     - name: Configure Git
       run: |
