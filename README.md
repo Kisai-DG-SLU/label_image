@@ -5,6 +5,7 @@
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
+<!-- Trigger CI/CD workflow and auto-PR -->
 ## 📋 Description du projet
 
 Projet de labellisation automatique et d'apprentissage semi-supervisé pour la détection de tumeurs cérébrales sur IRM. L'objectif est d'automatiser la détection de tumeurs cérébrales à partir d'IRM en utilisant l'apprentissage semi-supervisé pour pallier la rareté des labels experts.
