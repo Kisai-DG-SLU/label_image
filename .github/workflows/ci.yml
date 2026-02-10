@@ -3,24 +3,8 @@ name: CI/CD Pipeline
 on:
   push:
     branches: [ "main", "develop" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'notebooks/**'
-      - 'pyproject.toml'
-      - 'pixi.toml'
-      - 'Makefile'
-      - '.github/workflows/**'
   pull_request:
     branches: [ "main", "develop" ]
-    paths:
-      - 'src/**'
-      - 'tests/**'
-      - 'notebooks/**'
-      - 'pyproject.toml'
-      - 'pixi.toml'
-      - 'Makefile'
-      - '.github/workflows/**'
 
 jobs:
   test:
