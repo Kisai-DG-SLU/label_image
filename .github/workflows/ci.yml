@@ -150,6 +150,11 @@ jobs:
     
     - name: Deploy to gh-pages branch
       run: |
+        # Sauvegarde des fichiers de couverture avant de changer de branche
+        mkdir -p /tmp/coverage-deploy
+        cp -r coverage-artifact/* /tmp/coverage-deploy/
+        cp coverage.json /tmp/coverage-deploy/
+        
         # Clone la branche gh-pages
         git fetch origin gh-pages
         git checkout gh-pages
@@ -157,20 +162,20 @@ jobs:
         # Nettoie le répertoire sauf .nojekyll
         find . -maxdepth 1 ! -name '.nojekyll' ! -name '.git' ! -name '.' -exec rm -rf {} +
         
-        # Vérifie que le répertoire htmlcov existe dans l'artefact
-        if [ -d "coverage-artifact/htmlcov" ]; then
+        # Vérifie que le répertoire htmlcov existe dans la sauvegarde
+        if [ -d "/tmp/coverage-deploy/htmlcov" ]; then
           echo "Copie des fichiers de rapport de couverture..."
-          cp -r coverage-artifact/htmlcov/* .
+          cp -r /tmp/coverage-deploy/htmlcov/* .
           echo "Fichiers copiés avec succès"
         else
-          echo "ERREUR: Répertoire htmlcov non trouvé dans coverage-artifact/"
-          echo "Contenu de coverage-artifact/:"
-          ls -la coverage-artifact/
+          echo "ERREUR: Répertoire htmlcov non trouvé dans /tmp/coverage-deploy/"
+          echo "Contenu de /tmp/coverage-deploy/:"
+          ls -la /tmp/coverage-deploy/
           exit 1
         fi
         
         # Copie le fichier JSON de métriques
-        cp coverage.json .
+        cp /tmp/coverage-deploy/coverage.json .
         
         # Vérifie que les fichiers sont présents
         echo "Vérification des fichiers déployés:"
