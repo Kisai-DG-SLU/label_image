@@ -78,3 +78,29 @@ Le workflow CI/CD échouait avec l'erreur "Get Pages site failed" car GitHub Pag
 - Le badge dynamique est mis à jour automatiquement à chaque merge sur `main`
 - Le workflow `deploy-coverage` ne s'exécute que sur la branche `main` (condition `if: github.ref == 'refs/heads/main'`)
 - L'auto-merge fonctionne avec le label `auto-merge` lorsque tous les checks sont passés
+## Améliorations récentes (10/02/2026)
+
+### Configuration GH_PAT pour les merges automatiques
+- Ajout de la section `permissions` dans le workflow CI avec `contents: write`, `pull-requests: write`, `pages: write`, `id-token: write`
+- Utilisation de `GH_PAT` avec fallback sur `GITHUB_TOKEN` pour les actions nécessitant des permissions étendues
+- Industrialisation de la solution éprouvée de Projet_8
+
+### Workflow CI exécuté sur tous les fichiers
+- Suppression des restrictions `paths` dans les triggers `push` et `pull_request`
+- Le workflow CI s'exécute maintenant pour TOUS les fichiers modifiés, pas seulement `src/**`, `tests/**`, etc.
+- Correction du problème où les modifications de documentation ne déclenchaient pas le workflow
+
+### Résolution finale
+- PR #6 mergée manuellement après passage de tous les checks CI
+- Workflow CI sur `main` (run ID `21877460607`) terminé avec succès
+- Déploiement GitHub Pages fonctionnel avec badge accessible (HTTP 200)
+- Configuration GH_PAT ajoutée pour permettre les merges automatiques même avec protection de branche
+- Workflow CI modifié pour s'exécuter sur tous les fichiers
+
+### État final
+- ✅ GitHub Pages déployé avec succès
+- ✅ Badge dynamique de couverture fonctionnel (78.8%)
+- ✅ Workflow CI/CD complètement automatisé
+- ✅ Auto-PR de `develop` vers `main` avec label `auto-merge`
+- ✅ Protection de branche configurée avec checks requis mais sans reviews
+- ✅ Industrialisation des choix des projets précédents (Projet_6, Projet_7, Projet_8)
