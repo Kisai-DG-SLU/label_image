@@ -6,10 +6,18 @@ on:
   pull_request:
     branches: [ "main", "develop" ]
 
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
 jobs:
   test:
-    name: Tests unitaires et linting
+    name: test
     runs-on: ubuntu-22.04
+    outputs:
+      should_merge: ${{ steps.check_merge.outputs.should_merge }}
     
     steps:
     - name: Checkout code
@@ -23,287 +31,130 @@ jobs:
     - name: Install dependencies
       run: pixi install
     
-    - name: Setup package in development mode
+    - name: Setup package
       run: pixi run setup
     
-    - name: Run linting and formatting checks
+    - name: Run linting
       run: pixi run lint
     
-    - name: Run tests with coverage and generate reports
+    - name: Run tests
+      run: pixi run pytest --cov=src --cov-report=html --cov-report=xml --cov-report=term
+        
+    - name: Check if merge required
+      id: check_merge
       run: |
-        # Exécute les tests avec génération des rapports de couverture
-        pixi run pytest --cov=src --cov-report=html --cov-report=xml --cov-report=term
-        
-    - name: Verify coverage files exist
-      run: |
-        echo "Vérification des fichiers de couverture..."
-        ls -la
-        if [ -d "htmlcov" ]; then
-          echo "✓ Répertoire htmlcov existe"
-          ls -la htmlcov/
+        if [[ "${{ github.ref }}" == "refs/heads/develop" && "${{ github.event_name }}" == "push" ]]; then
+          echo "should_merge=true" >> $GITHUB_OUTPUT
         else
-          echo "✗ ERREUR: htmlcov n'existe pas"
-          exit 1
+          echo "should_merge=false" >> $GITHUB_OUTPUT
         fi
-        
-        if [ -f "coverage.xml" ]; then
-          echo "✓ Fichier coverage.xml existe"
-        else
-          echo "✗ ERREUR: coverage.xml n'existe pas"
-          exit 1
-        fi
-        
-    # Désactivé temporairement car nécessite un token Codecov
-    # - name: Upload coverage reports to Codecov
-    #   uses: codecov/codecov-action@v4
-    #   with:
-    #     file: ./coverage.xml
-    #     flags: unittests
-        
-    - name: Upload coverage reports as artifacts
+
+    - name: Upload coverage
       uses: actions/upload-artifact@v4
       with:
         name: coverage-reports
         path: |
           htmlcov/
           coverage.xml
-  
-  deploy-coverage:
-    name: Deploy Coverage Report to GitHub Pages
-    runs-on: ubuntu-22.04
-    needs: test
-    if: github.ref == 'refs/heads/main'
-    permissions:
-      contents: write
-      pages: write
-      id-token: write
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Setup Pixi
-      uses: prefix-dev/setup-pixi@v0.5.2
-      with:
-        pixi-version: 'v0.32.0'
-    
-    - name: Install dependencies
-      run: pixi install
-    
-    - name: Download coverage artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: coverage-reports
-        path: coverage-artifact/
-    
-    - name: Verify downloaded artifact
-      run: |
-        echo "Vérification de l'artefact téléchargé..."
-        ls -la coverage-artifact/
-        if [ -d "coverage-artifact/htmlcov" ]; then
-          echo "✓ Répertoire htmlcov trouvé dans l'artefact"
-          echo "Contenu de htmlcov:"
-          ls -la coverage-artifact/htmlcov/
-        else
-          echo "✗ ERREUR: htmlcov non trouvé dans coverage-artifact/"
-          echo "Structure de coverage-artifact/:"
-          find coverage-artifact/ -type f -name "*.html" | head -10
-          exit 1
-        fi
-        
-        if [ -f "coverage-artifact/coverage.xml" ]; then
-          echo "✓ Fichier coverage.xml trouvé dans l'artefact"
-        else
-          echo "✗ ERREUR: coverage.xml non trouvé dans coverage-artifact/"
-          exit 1
-        fi
-    
-    - name: Extract coverage percentage
-      run: |
-        # Exécute le script d'extraction de couverture avec pixi
-        pixi run python scripts/extract_coverage.py coverage-artifact/coverage.xml coverage.json
-        
-        # Affiche le pourcentage extrait
-        echo "Pourcentage de couverture extrait:"
-        cat coverage.json
-    
-    - name: Prepare coverage report for GitHub Pages
-      run: |
-        # Crée un répertoire pour GitHub Pages
-        mkdir -p gh-pages-content
-        # Copie les fichiers HTML de couverture
-        cp -r coverage-artifact/htmlcov/* gh-pages-content/
-        # Copie le fichier JSON de métriques
-        cp coverage.json gh-pages-content/
-        # Crée un fichier index.html simple pour rediriger vers le rapport
-        cat > gh-pages-content/index.html << 'EOF'
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta http-equiv="refresh" content="0; url=index.html">
-            <title>Coverage Report</title>
-        </head>
-        <body>
-            <p>Redirecting to coverage report...</p>
-        </body>
-        </html>
-        EOF
-    
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v4
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./gh-pages-content
-        keep_files: false
-  
+
   build:
-    name: Build and package
+    name: build
     runs-on: ubuntu-22.04
     needs: test
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.5.2
-      with:
-        pixi-version: 'v0.32.0'
-    
-    - name: Install dependencies
-      run: pixi install
-    
-    - name: Build package
+    - name: Build
       run: |
         pip install build
         python -m build
-    
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: python-package-dist
         path: dist/
-  
+
   notebook-test:
-    name: Test des notebooks
+    name: notebook-test
     runs-on: ubuntu-22.04
-    
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-    
     - name: Setup Pixi
       uses: prefix-dev/setup-pixi@v0.5.2
-      with:
-        pixi-version: 'v0.32.0'
-    
-    - name: Install dependencies
-      run: pixi install
-    
-    - name: Test notebooks with nbconvert
+    - name: Test notebooks
       run: |
-        # Test that notebooks can be executed without errors
         for notebook in notebooks/*.ipynb; do
-          echo "Testing notebook: $notebook"
           pixi run python -m nbconvert --to notebook --execute "$notebook" --output-dir /tmp
         done
-  
-  openshift-deploy:
-    name: Déploiement OpenShift (simulé)
-    runs-on: ubuntu-22.04
-    needs: [test, build]
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Setup OpenShift CLI
-      run: |
-        # Simulation pour l'instant - à remplacer par la vraie configuration OC
-        echo "OpenShift deployment would run here"
-        echo "OC CLI would be configured with secrets"
-    
-    - name: Build Docker image
-      run: |
-        echo "Building Docker image for OpenShift deployment"
-        # Cette étape serait implémentée avec les manifests OpenShift réels
-        
-    - name: Deploy to OpenShift
-      run: |
-        echo "Deploying to OpenShift namespace"
-        # Cette étape utiliserait les manifests Kubernetes et OC CLI
 
-  auto-pr:
-    name: Auto Create PR
-    runs-on: ubuntu-22.04
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v6
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        title: "Auto PR: ${{ github.event.head_commit.message }}"
-        body: |
-          ## Pull Request Automatique
-          
-          Ce PR a été créé automatiquement par le workflow CI.
-          
-          **Changements:**
-          - ${{ github.event.head_commit.message }}
-          
-          **Statut CI:** ✅ Tous les checks doivent passer avant merge
-          
-          **Merge automatique:** Ajouter le label `auto-merge` pour merge automatique
-        branch: "auto-pr-${{ github.sha }}"
-        base: main
-        labels: "automated-pr"
-        delete-branch: true
-  
   ci:
-    name: CI Status
+    name: ci
     runs-on: ubuntu-22.04
-    needs: [test, build, notebook-test, deploy-coverage]
+    needs: [test, build, notebook-test]
     if: always()
-    
     steps:
-    - name: Aggregate CI status
-      id: ci-status
+    - name: Aggregate Status
       run: |
-        # Vérifier le statut de tous les jobs requis
         if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build.result }}" == "success" && "${{ needs.notebook-test.result }}" == "success" ]]; then
-          echo "All required checks passed"
-          echo "CI status: success"
-          echo "status=success" >> $GITHUB_OUTPUT
+          echo "CI Success"
+          exit 0
         else
-          echo "Some checks failed"
-          echo "CI status: failure"
-          echo "status=failure" >> $GITHUB_OUTPUT
+          echo "CI Failure"
           exit 1
         fi
-    
-    - name: Create status badge
-      if: always()
-      run: |
-        if [[ "${{ steps.ci-status.outputs.status }}" == "success" ]]; then
-          echo "Creating success badge"
-          echo "![CI Status](https://img.shields.io/badge/CI-passing-brightgreen)" > ci-status.md
-        else
-          echo "Creating failure badge"
-          echo "![CI Status](https://img.shields.io/badge/CI-failing-red)" > ci-status.md
-        fi
-    
-    - name: Upload CI status artifact
-      if: always()
-      uses: actions/upload-artifact@v4
+
+  deploy-coverage:
+    name: Deploy Coverage
+    needs: test
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: Setup Pixi
+      uses: prefix-dev/setup-pixi@v0.5.2
+    - name: Download Artifacts
+      uses: actions/download-artifact@v4
       with:
-        name: ci-status
-        path: ci-status.md
+        name: coverage-reports
+        path: coverage-artifact/
+    - name: Extract & Deploy
+      run: |
+        pixi run python scripts/extract_coverage.py coverage-artifact/coverage.xml coverage.json
+    - name: Publish to Pages
+      uses: peaceiris/actions-gh-pages@v4
+      with:
+        github_token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+        publish_dir: ./coverage-artifact/htmlcov
+
+  auto-pr:
+    name: auto-pr
+    needs: [test, ci]
+    if: needs.test.outputs.should_merge == 'true' && needs.ci.result == 'success'
+    runs-on: ubuntu-22.04
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+    
+    - name: Install GitHub CLI
+      run: |
+        type -p gh >/dev/null || sudo apt-get update && sudo apt-get install -y gh
+    
+    - name: Configure Git
+      run: |
+        git config user.name "GitHub Actions"
+        git config user.email "actions@github.com"
+    
+    - name: Create PR
+      env:
+        GH_TOKEN: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
+      run: |
+        gh pr create --base main --head develop \
+          --title "Auto PR: ${{ github.event.head_commit.message }}" \
+          --body "Automated PR created by CI. Merge managed by auto-merge rules." \
+          --label "auto-merge" || echo "PR already exists"

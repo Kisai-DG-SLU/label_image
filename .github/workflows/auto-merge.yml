@@ -1,4 +1,4 @@
-name: Auto Merge
+name: Auto Merge Logic
 
 on:
   pull_request:
@@ -13,14 +13,7 @@ jobs:
   auto-merge:
     if: |
       github.event.pull_request.draft == false &&
-      github.event.pull_request.state == 'open' &&
-      (github.event.action == 'labeled' || 
-       github.event.action == 'synchronize' || 
-       github.event.action == 'opened' || 
-       github.event.action == 'reopened' ||
-       github.event_name == 'pull_request_review' ||
-       github.event_name == 'check_suite' ||
-       github.event_name == 'status')
+      github.event.pull_request.state == 'open'
     runs-on: ubuntu-22.04
     permissions:
       contents: write
@@ -33,61 +26,46 @@ jobs:
       - name: Auto merge PR
         uses: actions/github-script@v7
         with:
+          github-token: ${{ secrets.GH_PAT || secrets.GITHUB_TOKEN }}
           script: |
+            const pull_number = context.payload.pull_request ? context.payload.pull_request.number : context.issue.number;
+            
+            if (!pull_number) {
+              console.log("No PR number found.");
+              return;
+            }
+
             const { data: pr } = await github.rest.pulls.get({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              pull_number: context.issue.number
+              pull_number: pull_number
             });
             
-            // Vérifier si le PR est prêt pour merge
             const { data: checks } = await github.rest.checks.listForRef({
               owner: context.repo.owner,
               repo: context.repo.repo,
               ref: pr.head.sha
             });
             
-            const { data: statuses } = await github.rest.repos.getCombinedStatusForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: pr.head.sha
+            // Alignement strict avec les noms dans ci.yaml et le fichier parent
+            const requiredChecks = ['ci', 'test', 'build', 'notebook-test'];
+            
+            const allChecksPassed = requiredChecks.every(name => {
+              const check = checks.check_runs.find(cr => cr.name === name);
+              return check && check.conclusion === 'success';
             });
             
-            // Vérifier que tous les checks requis sont passés
-            const requiredChecks = ['CI Status', 'Tests unitaires et linting', 'Build and package', 'Test des notebooks'];
-            const allChecksPassed = requiredChecks.every(checkName => {
-              const check = checks.check_runs.find(cr => cr.name === checkName);
-              const status = statuses.statuses.find(s => s.context === checkName);
-              return (check && check.conclusion === 'success') ||
-                     (status && status.state === 'success');
-            });
-            
-            // Vérifier si le PR a le label "auto-merge"
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-            
-            const hasAutoMergeLabel = labels.some(label => label.name === 'auto-merge');
+            const hasAutoMergeLabel = pr.labels.some(label => label.name === 'auto-merge');
             
             if (allChecksPassed && hasAutoMergeLabel && pr.mergeable_state === 'clean') {
-              console.log(`All checks passed and PR #${context.issue.number} has auto-merge label. Merging...`);
-              
-              try {
-                await github.rest.pulls.merge({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  pull_number: context.issue.number,
-                  merge_method: 'squash'
-                });
-                console.log(`Successfully merged PR #${context.issue.number}`);
-              } catch (error) {
-                console.error(`Failed to merge PR #${context.issue.number}:`, error.message);
-              }
+              console.log(`All conditions met for PR #${pull_number}. Merging...`);
+              await github.rest.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pull_number,
+                merge_method: 'squash'
+              });
+              console.log("Merge completed.");
             } else {
-              console.log(`PR #${context.issue.number} not ready for auto-merge:`);
-              console.log(`- All checks passed: ${allChecksPassed}`);
-              console.log(`- Has auto-merge label: ${hasAutoMergeLabel}`);
-              console.log(`- Mergeable state: ${pr.mergeable_state}`);
+              console.log(`PR #${pull_number} not ready: Checks:${allChecksPassed}, Label:${hasAutoMergeLabel}, State:${pr.mergeable_state}`);
             }
