@@ -69,11 +69,12 @@ jobs:
           exit 1
         fi
         
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
+    # Désactivé temporairement car nécessite un token Codecov
+    # - name: Upload coverage reports to Codecov
+    #   uses: codecov/codecov-action@v4
+    #   with:
+    #     file: ./coverage.xml
+    #     flags: unittests
         
     - name: Upload coverage reports as artifacts
       uses: actions/upload-artifact@v4
@@ -289,7 +290,7 @@ jobs:
         base: main
         labels: "automated-pr"
         delete-branch: true
-    
+  
   ci:
     name: CI Status
     runs-on: ubuntu-22.04
