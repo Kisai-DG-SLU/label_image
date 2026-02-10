@@ -45,17 +45,36 @@ jobs:
     - name: Run linting and formatting checks
       run: pixi run lint
     
-    - name: Run tests with coverage
-      run: pixi run test
-    
-    - name: Generate HTML coverage report
-      run: pixi run pytest --cov=src --cov-report=html --cov-report=xml
-      
-    - name: Upload coverage reports to Codecov
-      uses: codecov/codecov-action@v4
-      with:
-        file: ./coverage.xml
-        flags: unittests
+    - name: Run tests with coverage and generate reports
+      run: |
+        # Exécute les tests avec génération des rapports de couverture
+        pixi run pytest --cov=src --cov-report=html --cov-report=xml --cov-report=term
+        
+    - name: Verify coverage files exist
+      run: |
+        echo "Vérification des fichiers de couverture..."
+        ls -la
+        if [ -d "htmlcov" ]; then
+          echo "✓ Répertoire htmlcov existe"
+          ls -la htmlcov/
+        else
+          echo "✗ ERREUR: htmlcov n'existe pas"
+          exit 1
+        fi
+        
+        if [ -f "coverage.xml" ]; then
+          echo "✓ Fichier coverage.xml existe"
+        else
+          echo "✗ ERREUR: coverage.xml n'existe pas"
+          exit 1
+        fi
+        
+    # Désactivé temporairement car nécessite un token Codecov
+    # - name: Upload coverage reports to Codecov
+    #   uses: codecov/codecov-action@v4
+    #   with:
+    #     file: ./coverage.xml
+    #     flags: unittests
         
     - name: Upload coverage reports as artifacts
       uses: actions/upload-artifact@v4
@@ -93,6 +112,28 @@ jobs:
         name: coverage-reports
         path: coverage-artifact/
     
+    - name: Verify downloaded artifact
+      run: |
+        echo "Vérification de l'artefact téléchargé..."
+        ls -la coverage-artifact/
+        if [ -d "coverage-artifact/htmlcov" ]; then
+          echo "✓ Répertoire htmlcov trouvé dans l'artefact"
+          echo "Contenu de htmlcov:"
+          ls -la coverage-artifact/htmlcov/
+        else
+          echo "✗ ERREUR: htmlcov non trouvé dans coverage-artifact/"
+          echo "Structure de coverage-artifact/:"
+          find coverage-artifact/ -type f -name "*.html" | head -10
+          exit 1
+        fi
+        
+        if [ -f "coverage-artifact/coverage.xml" ]; then
+          echo "✓ Fichier coverage.xml trouvé dans l'artefact"
+        else
+          echo "✗ ERREUR: coverage.xml non trouvé dans coverage-artifact/"
+          exit 1
+        fi
+    
     - name: Configure Git
       run: |
         git config --global user.name "GitHub Actions"
@@ -104,6 +145,7 @@ jobs:
         pixi run python scripts/extract_coverage.py coverage-artifact/coverage.xml coverage.json
         
         # Affiche le pourcentage extrait
+        echo "Pourcentage de couverture extrait:"
         cat coverage.json
     
     - name: Deploy to gh-pages branch
@@ -117,17 +159,22 @@ jobs:
         
         # Vérifie que le répertoire htmlcov existe dans l'artefact
         if [ -d "coverage-artifact/htmlcov" ]; then
-          echo "Copying coverage report files..."
+          echo "Copie des fichiers de rapport de couverture..."
           cp -r coverage-artifact/htmlcov/* .
+          echo "Fichiers copiés avec succès"
         else
-          echo "ERROR: htmlcov directory not found in coverage-artifact/"
-          echo "Listing contents of coverage-artifact/:"
+          echo "ERREUR: Répertoire htmlcov non trouvé dans coverage-artifact/"
+          echo "Contenu de coverage-artifact/:"
           ls -la coverage-artifact/
           exit 1
         fi
         
         # Copie le fichier JSON de métriques
         cp coverage.json .
+        
+        # Vérifie que les fichiers sont présents
+        echo "Vérification des fichiers déployés:"
+        ls -la | head -20
         
         # Commit et push
         git add .
@@ -243,7 +290,7 @@ jobs:
         base: main
         labels: "automated-pr"
         delete-branch: true
-    
+  
   ci:
     name: CI Status
     runs-on: ubuntu-22.04
