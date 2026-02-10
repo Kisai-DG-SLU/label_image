@@ -1,7 +1,7 @@
 # BrainScanAI - Labellisation semi-supervisée pour détection de tumeurs cérébrales
 
 ![CI Status](https://github.com/Kisai-DG-SLU/label_image/actions/workflows/ci.yml/badge.svg)
-![Test Coverage](https://img.shields.io/endpoint?url=https://kisai-dg-slu.github.io/label_image/coverage.json)
+[![Test Coverage](https://img.shields.io/endpoint?url=https://kisai-dg-slu.github.io/label_image/coverage.json)](https://kisai-dg-slu.github.io/label_image/)
 ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
