@@ -267,12 +267,11 @@ jobs:
         echo "Creating PR from develop to main..."
         gh pr create --base main --head develop --title "Auto PR: ${{ github.event.head_commit.message }}" --body "Automated Pull Request created by CI/CD Pipeline." || echo "PR already exists"
         
-        # Ajouter le label auto-merge pour déclencher le merge automatique
         PR_URL=$(gh pr list --head develop --json url --jq '.[0].url')
         if [ ! -z "$PR_URL" ]; then
           echo "Found PR: $PR_URL"
-          gh pr edit "$PR_URL" --add-label "auto-merge"
-          echo "Added auto-merge label to PR"
+          echo "Enabling Auto-merge for $PR_URL"
+          gh pr merge --auto --merge --delete-branch "$PR_URL"
         else
           echo "No PR found"
         fi
