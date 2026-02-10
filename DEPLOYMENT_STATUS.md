@@ -104,4 +104,3 @@ Le workflow CI/CD échouait avec l'erreur "Get Pages site failed" car GitHub Pag
 - ✅ Auto-PR de `develop` vers `main` avec label `auto-merge`
 - ✅ Protection de branche configurée avec checks requis mais sans reviews
 - ✅ Industrialisation des choix des projets précédents (Projet_6, Projet_7, Projet_8)
-
