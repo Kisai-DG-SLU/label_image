@@ -1,8 +1,36 @@
 # BrainScanAI - Labellisation semi-supervisée pour détection de tumeurs cérébrales
 
+![CI Status](https://github.com/Kisai-DG-SLU/label_image/actions/workflows/ci.yml/badge.svg)
+![Test Coverage](https://img.shields.io/endpoint?url=https://kisai-dg-slu.github.io/label_image/coverage.json)
+![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
 ## 📋 Description du projet
 
 Projet de labellisation automatique et d'apprentissage semi-supervisé pour la détection de tumeurs cérébrales sur IRM. L'objectif est d'automatiser la détection de tumeurs cérébrales à partir d'IRM en utilisant l'apprentissage semi-supervisé pour pallier la rareté des labels experts.
+
+## 🛡️ Badges et Métriques
+
+### Qualité du code
+- **Couverture des tests**: [![Coverage](https://img.shields.io/endpoint?url=https://kisai-dg-slu.github.io/label_image/coverage.json)](https://kisai-dg-slu.github.io/label_image/)
+- **Statut CI/CD**: [![CI Status](https://github.com/Kisai-DG-SLU/label_image/actions/workflows/ci.yml/badge.svg)](https://github.com/Kisai-DG-SLU/label_image/actions/workflows/ci.yml)
+- **Version Python**: ![Python Version](https://img.shields.io/badge/python-3.11%2B-blue)
+- **Licence**: ![License](https://img.shields.io/badge/license-MIT-green)
+
+### Rapports de qualité
+- **Rapport de couverture détaillé**: Disponible sur [GitHub Pages](https://kisai-dg-slu.github.io/label_image/)
+- **Tests unitaires**: 73 tests passants avec 79% de couverture
+- **Linting**: Conforme aux standards PEP 8, Black et Ruff
+- **Typage**: Validation mypy avec succès
+
+### Workflow CI/CD
+Le projet utilise un pipeline CI/CD complet avec GitHub Actions qui inclut:
+- ✅ Tests unitaires avec couverture minimum de 70%
+- ✅ Linting et formatting automatique
+- ✅ Build de package Python
+- ✅ Tests des notebooks Jupyter
+- ✅ Déploiement automatique des rapports de couverture sur GitHub Pages
+- ✅ Auto-PR de `develop` vers `main` avec validation CI
 
 ## 🎯 Objectifs
 
