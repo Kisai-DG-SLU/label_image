@@ -121,9 +121,18 @@ jobs:
       with:
         name: coverage-reports
         path: coverage-artifact/
-    - name: Extract & Deploy
+    - name: Verify artifacts
+      run: |
+        echo "Contenu de coverage-artifact/:"
+        ls -la coverage-artifact/
+        echo "Contenu de coverage-artifact/htmlcov/:"
+        ls -la coverage-artifact/htmlcov/ || echo "htmlcov directory not found"
+    - name: Extract coverage percentage
       run: |
         pixi run python scripts/extract_coverage.py coverage-artifact/coverage.xml coverage.json
+    - name: Move coverage.json to htmlcov directory
+      run: |
+        mv coverage.json coverage-artifact/htmlcov/coverage.json
     - name: Publish to Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
