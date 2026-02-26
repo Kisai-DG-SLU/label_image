@@ -11,6 +11,8 @@ from typing import Any
 import numpy as np
 import pandas as pd
 import torch
+import torchvision.transforms as transforms
+from PIL import Image
 from torch.utils.data import DataLoader, Dataset
 
 warnings.filterwarnings("ignore")
@@ -25,21 +27,33 @@ class MRIDataset(Dataset):
         self.image_paths = image_paths
         self.labels = labels
         self.transform = transform
+        self.default_transform = transforms.Compose(
+            [
+                transforms.Resize((224, 224)),
+                transforms.ToTensor(),
+                transforms.Normalize(
+                    mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]
+                ),
+            ]
+        )
 
     def __len__(self) -> int:
         return len(self.image_paths)
 
     def __getitem__(self, idx: int):
-        # In real implementation, load actual MRI image
-        # For now, return dummy data
-        _ = self.image_paths[idx]  # Keep for future implementation
+        image_path = self.image_paths[idx]
 
-        # TODO: Implement actual image loading
-        # For demo purposes, return random tensor
-        image = torch.randn(3, 224, 224)
+        try:
+            image = Image.open(image_path).convert("RGB")
 
-        if self.transform:
-            image = self.transform(image)
+            if self.transform:
+                image = self.transform(image)
+            else:
+                image = self.default_transform(image)
+
+        except Exception as e:
+            print(f"Warning: Error loading image {image_path}: {e}")
+            image = torch.zeros((3, 224, 224))
 
         if self.labels is not None:
             label = self.labels[idx]
@@ -66,7 +80,33 @@ class DataLoaderWrapper:
             self.image_paths.extend(list(self.data_dir.glob(f"**/*{ext}")))
 
         print(f"Found {len(self.image_paths)} images in {self.data_dir}")
+
+        # Extract labels from paths
+        self._extract_labels_from_paths()
+
         return self.image_paths
+
+    def _extract_labels_from_paths(self):
+        """Extract labels from directory structure."""
+        self.labels = []
+        for path in self.image_paths:
+            path_str = str(path)
+            if "cancer" in path_str:
+                self.labels.append(1)  # Cancer label
+            elif "normal" in path_str:
+                self.labels.append(0)  # Normal label
+            else:
+                self.labels.append(-1)  # Unknown label (unlabeled data)
+
+        # Debug info
+        labeled_count = sum(1 for label in self.labels if label != -1)
+        print(f"Found {labeled_count} labeled images out of {len(self.labels)}")
+        if labeled_count > 0:
+            cancer_count = sum(1 for label in self.labels if label == 1)
+            normal_count = sum(1 for label in self.labels if label == 0)
+            print(f"  Cancer: {cancer_count}, Normal: {normal_count}")
+
+        return self.labels
 
     def load_metadata(self, metadata_file: Path | None = None) -> pd.DataFrame:
         """Load metadata if available."""
