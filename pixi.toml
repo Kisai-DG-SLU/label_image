@@ -1,4 +1,4 @@
-[project]
+[workspace]
 name = "brain-scan-ai"
 version = "0.1.0"
 description = "Labellisation semi-supervisée pour la détection de tumeurs cérébrales sur IRM avec intégration Red Hat OpenShift"
@@ -28,6 +28,8 @@ notebook = ">=7.0.6"
 python-dotenv = ">=1.0.0"
 typer = ">=0.9.0"
 rich = ">=13.7.0"
+nomkl = ">=1.0,<2"
+tqdm = ">=4.67.3,<5"
 
 # ML dependencies - using pip for torch installation
 [pypi-dependencies]
