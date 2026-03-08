@@ -217,3 +217,8 @@ configs/*.secret.yaml
 # Pixi
 .pixi/
 pixi.lock
+
+.venv_conda
+venv
+__pycache__
+*.pyc
