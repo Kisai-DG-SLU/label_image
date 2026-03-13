@@ -1,0 +1,28 @@
+{
+  "semi_supervised": {
+    "test_acc": 0.8,
+    "precision_cancer": 1.0,
+    "recall_cancer": 0.5714285714285714,
+    "f1_cancer": 0.7272727272727273,
+    "precision_normal": 0.7272727272727273,
+    "recall_normal": 1.0,
+    "f1_normal": 0.8421052631578947,
+    "best_val_acc": 0.9333333333333333
+  },
+  "supervised_only": {
+    "test_acc": 0.8666666666666667,
+    "precision_cancer": 0.7777777777777778,
+    "recall_cancer": 1.0,
+    "f1_cancer": 0.875,
+    "precision_normal": 1.0,
+    "recall_normal": 0.75,
+    "f1_normal": 0.8571428571428571,
+    "best_val_acc": 1.0
+  },
+  "train_sizes": {
+    "semi_supervised_train_size": 1476,
+    "supervised_train_size": 70,
+    "val_size": 15,
+    "test_size": 15
+  }
+}
